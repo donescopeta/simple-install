@@ -1,0 +1,116 @@
+##SECTION main
+	##COMMENT
+		Instalacja kontenera dystrybucji alpine oraz pakietow servera asteriask.
+		Do przeprowadzienia instalacji jest wymagane połaczenie z internetem
+	##DEFINE
+		CONTAINER_NAME = alpine-asterisk
+		CONTAINER_IP = 192.168.0.237
+		HOSTIP = 192.168.0.236
+		GATEWAY = 192.168.0.7
+		DNS = 192.168.0.7
+		ROOTDIR = /var/lib/lxc/${CONTAINER_NAME}/rootfs
+	##INSTALL
+		#echo "Czy chcesz rozpocząć?"
+#		ifconfig | grep -q ethbr1 && \
+#			JUMP configure_alpine
+			
+			
+##SECTION packeges
+	##COMMENT
+		Instalacja niezbędnych pakietów.
+	##DEFINE
+		PACKAGES = bridge-utils lxc
+	##INSTALL
+		sudo apt-get install $PACKAGES
+	##UNINSTALL
+		sudo apt-get remove $PACKAGES
+
+##SECTION lxc_container
+	##COMMENT
+		Instalacja kontenera dystrybucji alpine linux
+	##INSTALL
+		lxc-create --name $CONTAINER_NAME -t alpine -- --release edge
+	##UNINSTALL
+		lxc-destroy $CONTAINER_NAME
+		
+
+##SECTION lxc_container_options
+	##DATA:LXCSETTINGS
+		#lxc_net
+		lxc.network.type = veth
+		lxc.network.link = ethbr1
+		lxc.network.flags = up
+		lxc.network.name = eth0
+		lxc.network.ipv4 = ${CONTAINER_IP}/24
+		lxc.network.ipv4.gateway = ${GATEWAY}
+		lxc.start.auto = 1
+		#__lxc_net
+	##COMMENT
+		Konfiguracja ustawień sieci kontenera
+	##INSTALL
+		#incat LXCSETTINGS
+		incat LXCSETTINGS >> /var/lib/lxc/${CONTAINER_NAME}/config
+		
+##SECTION bridgesetup
+	##DATA:bridge_settings
+		#LXCBRIDGE
+		auto ethbr1
+		iface ethbr1 inet static
+			address ${HOSTIP}
+			netmask 255.255.255.0
+			gateway ${GATEWAY}
+			bridge_ports eth0    # this line is important.
+			bridge_stp off
+			bridge_fd 2
+			bridge_maxwait 20
+			dns-nameservers ${DNS}
+		#__LXCBRIDGE
+		
+	##DEFINE
+		networkfile = /etc/network/interfaces
+
+	##COMMENT
+		Instalacja mostka dla kontenera
+
+	##INSTALL
+		grep -q "lxc-nat-bridge" $networkfile && return 0
+		incat bridge_settings >> $networkfile
+
+	##UNINSTALL
+		sed -i '/#LXCBRIDGE/,/#__LXCBRIDGE/d' $networkfile
+
+##SECTION configure_system
+	##COMMENT
+		Konfiguracja systemu. Aby dokończyć instalacje należy uruchomić ponownie
+		system i wykonać skrypt "install" jeszcze raz.
+	##INSTALL
+		sudo systemctl disable dhcpcd
+		uncomment net.ipv4.ip_forward=1 /etc/sysctl.conf
+		echo 1 > /proc/sys/net/ipv4/ip_forward
+		comment "iface eth0" /etc/network/interfaces
+		comment "auto eth0" /etc/network/interfaces
+		echo  n "Czy uruchomić ponownie komputer?"
+		ask && sudo reboot
+		exit 0
+		
+##SECTION configure_alpine
+	##COMMENT
+		Konfiguracja systemu alpine zawartego w kontenerze.
+		Do instalacji jest wymagane połączenie z internetem.
+		
+	##DATA:ALPINEREPOS
+		http://nl.alpinelinux.org/alpine/edge/main
+		http://nl.alpinelinux.org/alpine/edge/testing
+		http://nl.alpinelinux.org/alpine/edge/community
+		
+	##DEFINE
+		ALPINE_PACKAGES = asterisk asterisk-sample-config
+		
+	##INSTALL
+		incat ALPINEREPOS > $ROOTDIR/etc/apk/repositories
+		lxc-attach -n ${CONTAINER_NAME} -- apk update
+		lxc-attach -n ${CONTAINER_NAME} -- apk upgrade
+		lxc-attach -n ${CONTAINER_NAME} -- apk add ${ALPINE_PACKAGES}
+		lxc-attach -n ${CONTAINER_NAME} -- rc-update add asterisk
+
+		
