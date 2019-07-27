@@ -27,7 +27,7 @@ Example :
 ```
 
 
-Example script:
+## Example script:
 
 ```
 ##SECTION main
