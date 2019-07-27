@@ -9,7 +9,7 @@ The info file is divided to section by a `##SECTION` phrase. Each section is one
 * `##DEFINE` - Contains a nessesery variables.
 * `##INSTALL` - Contains BASH script that will be executed on `install` operation. 
 * `##UNINSTALL`- Contains BASH script that will be executed on `uninstall` operation. 
-* `##DATA:<variable name>` Contains text data that will be assinged to a variable 
+* `##DATA:<variable name>` Contains text data that will be assigned to a variable 
 ## Help
 ```
 install.sh Simple installator which uses an info file.
