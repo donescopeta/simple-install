@@ -1,8 +1,16 @@
 # simple-install
 Ansible-like BASH micro installation framework.
 
+## Usage
+The info file is divided to section by a `##SECTION` phrase. Each section is one single step of the process. Each section can contain subsections for different operations, for example:
 
 
+* `##COMMENT` - Contains a comment.
+* `##DEFINE` - Contains a nessesery variables.
+* `##INSTALL` - Contains BASH script that will be executed on `install` operation. 
+* `##UNINSTALL`- Contains BASH script that will be executed on `uninstall` operation. 
+* `##DATA:<variable name>` Contains text data that will be assinged to a variable 
+## Help
 ```
 install.sh Simple installator which uses an info file.
 Usage : install.sh [NAME OF A SUBSECTION IN INFO FILE] [options]
@@ -17,6 +25,7 @@ Example :
 	install.sh INSTALL
 	install.sh UNINSTALL -v
 ```
+
 
 Example script:
 
