@@ -16,7 +16,6 @@ Usage : install.sh [NAME OF A SUBSECTION IN INFO FILE] [options]
 Example :
 	install.sh INSTALL
 	install.sh UNINSTALL -v
-~~Mateusz Sokołowski 2013~~
 ```
 
 Example script:
